@@ -5,7 +5,7 @@
 
   Part of the OpenEnergyMonitor project:
   http://openenergymonitor.org
- 
+
 */
 
 var table = {
@@ -17,17 +17,24 @@ var table = {
     'deletedata':true,
 
     'sortfield':null,
+    'sortorder':null,
     'sortable':true,
     'groupprefix':"",
-     
+
     'draw':function()
     {
         if (table.data && table.sortable) {
-          table.data.sort(function(a,b) {
-            if(a[table.sortfield]<b[table.sortfield]) return -1;
-            if(a[table.sortfield]>b[table.sortfield]) return 1;
-            return 0;
-          });
+            table.data.sort(function(a,b) {
+                if (table.sortorder==1){
+                    if(a[table.sortfield]<b[table.sortfield]) return -1;
+                    if(a[table.sortfield]>b[table.sortfield]) return 1;
+                    return 0;
+                } else{
+                    if(a[table.sortfield]>b[table.sortfield]) return -1;
+                    if(a[table.sortfield]<b[table.sortfield]) return 1;
+                    return 0;
+                }
+            });
         }
 
         var group_num = 0;
@@ -41,10 +48,10 @@ var table = {
         }
 
         var html = "";
-        for (group in groups) 
+        for (group in groups)
         {
             // Minimized group persistance, see lines: 4,92,93
-            var visible = '', symbol ='<i class="icon-minus-sign"></i>'; 
+            var visible = '', symbol ='<i class="icon-minus-sign"></i>';
             if (table.groupshow[group]==undefined) table.groupshow[group]=true;
             if (table.groupshow[group]==false) {symbol = '<i class="icon-plus-sign"></i>'; visible = "display:none";}
 
@@ -69,7 +76,7 @@ var table = {
         $(table.element).html("<table class='table table-hover'>"+html+"</table>");
 
         if (table.eventsadded==false) {table.add_events(); table.eventsadded = true}
-        
+
         $(table.element).trigger("onDraw");
     },
 
@@ -80,7 +87,7 @@ var table = {
         html += "</tr>";
         return html;
     },
-        
+
     'update':function(row,field,value)
     {
         table.data[row][field] = value;
@@ -89,7 +96,7 @@ var table = {
           $("[row="+row+"][field="+field+"]").html(table.fieldtypes[type].draw(row,field));
         }
     },
-  
+
     'remove':function(row)
     {
         table.data.splice(row,1);
@@ -98,7 +105,13 @@ var table = {
 
     'sort':function(field,dir)
     {
+        if(table.sortfield == field){
+            table.sortorder = -table.sortorder;
+        }else{
+            table.sortorder = 1;
+        }
         table.sortfield = field;
+        //table.sortorder = dir;
         table.draw();
     },
 
@@ -136,7 +149,7 @@ var table = {
 
             var fields_to_update = {};
 
-            for (field in table.fields) 
+            for (field in table.fields)
             {
                 var type = table.fields[field].type;
 
@@ -146,8 +159,8 @@ var table = {
 
                 if (mode == 'save' && typeof table.fieldtypes[type].save === 'function') {
                   var value = table.fieldtypes[type].save(row,field);
-                  if (table.data[row][field] != value) fields_to_update[field] = value;	// only update db if value has changed
-                  table.update(row,field,value); 	// but update html table because this reverts back from <input>		
+                  if (table.data[row][field] != value) fields_to_update[field] = value; // only update db if value has changed
+                  table.update(row,field,value);    // but update html table because this reverts back from <input>
                 }
             }
 
@@ -172,9 +185,9 @@ var table = {
     /*
 
     Field type space
- 
+
     */
-  
+
     'fieldtypes':
     {
         'fixed':
@@ -199,9 +212,9 @@ var table = {
         'select':
         {
             'draw': function (row,field) { return table.fields[field].options[table.data[row][field]] },
-            'edit': function (row,field) { 
+            'edit': function (row,field) {
                 var options = "";
-                for (option in table.fields[field].options) 
+                for (option in table.fields[field].options)
                 {
                   var selected = ''; if (option==table.data[row][field]) selected = 'selected';
                   options += "<option value='"+option+"' "+selected+" >"+table.fields[field].options[option]+"</option>";
@@ -210,7 +223,7 @@ var table = {
             },
             'save': function (row,field) { return $("[row="+row+"][field="+field+"] select").val() },
         },
-        
+
         'fixedselect':
         {
             'draw': function (row,field) { return table.fields[field].options[table.data[row][field]] }
